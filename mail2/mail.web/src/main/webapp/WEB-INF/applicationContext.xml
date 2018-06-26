@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+          
+        <!-- 配置spring mvc注解驱动 -->
+        <mvc:annotation-driven></mvc:annotation-driven>
+        <!-- 配置spring mvc默认处理器 -->
+        <mvc:default-servlet-handler/>
+        <!-- 配置spring上下文扫描包路径 -->
+   		<context:component-scan base-package="org.springmvc4.task20180615"></context:component-scan>
+   		
+   		<!-- 配置数据源 -->
+   		<bean id="dataSource" class="com.mchange.v2.c3p0.DriverManagerDataSource">
+   			<property name="user" value="root"/>
+   			<property name="password" value="root"/>
+   			<property name="jdbcUrl" value="jdbc:mysql://localhost:3306/ssh"/>
+   			<property name="driverClass" value="com.mysql.jdbc.Driver"/>
+   		</bean>
+   		
+   		<!-- 配置sqlSessionFactory -->
+   		<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+   			<!-- 设置数据源 -->
+   			<property name="dataSource" ref="dataSource"/>
+   			<!-- 设置mybatis核心配置文件-->
+   			<property name="configLocation" value="classpath:mybatis-config.xml"/>
+   		</bean>
+   		
+   		<!-- 配置sql映射文件及接口扫描器 -->
+   		<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+   			<!-- 设置sqlSessionFactory -->
+   			<property name="sqlSessionFactory" ref="sqlSessionFactory"/>
+   			<!-- 设置SQL映射文件及接口包路径 -->
+   			<property name="basePackage" value="org.springmvc4.task20180615.mapper"/>
+   		</bean>
+   		
+    <!-- 定义事务管理器 -->
+    <bean id="myManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    	<property name="dataSource" ref="dataSource"/>
+    </bean> 
+    
+    <!--
+    <bean id="myManager" class="org.mybatis.spring.transaction.SpringManagedTransaction">
+    	<property name="dataSource" ref="dataSource">
+    	</property>
+    </bean>-->
+    
+    <!-- 定义事务切面配置 -->
+    <aop:config>
+    	<!-- 配置事务切入点 -->
+    	<aop:pointcut expression="execution(* org.springmvc4.task20180615.service.*.*(..))" id="myPointcut"/>
+    	<!-- 配置事务传播属性 -->
+    	<aop:advisor advice-ref="myAdvice" pointcut-ref="myPointcut" />
+    </aop:config>
+    
+    <!-- 配置事务传播属性  -->
+    <tx:advice id="myAdvice" transaction-manager="myManager">
+    	<!-- 配置参与事务的方法集 -->
+    	<tx:attributes>
+    		<!-- name表示代理或参与事务的方法: *表示所有方法 -->
+            <tx:method name="get*" read-only="true"/>
+            <tx:method name="find*" read-only="true"/>
+            <tx:method name="load*" read-only="true"/>
+            <tx:method name="search*" read-only="true"/>
+            <tx:method name="select*" read-only="true"/>
+            <tx:method name="*"/>
+    	</tx:attributes>
+    </tx:advice>
+</beans>

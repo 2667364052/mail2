@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:aop="http://www.springframework.org/schema/aop"
+  xmlns:tx="http://www.springframework.org/schema/tx"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                      http://www.springframework.org/schema/beans/spring-beans.xsd 
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context.xsd 
+                      http://www.springframework.org/schema/aop
+                      http://www.springframework.org/schema/aop/spring-aop.xsd
+                      http://www.springframework.org/schema/tx
+                      http://www.springframework.org/schema/tx/spring-tx.xsd">
+                      
+       <!-- 数据库连接属性 -->               
+     <context:property-placeholder location="classpath:jdbc.properties"/>
+                      
+     <!-- 配置数据源 -->                 
+       <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+         <property name="driverClass" value="${jdbc.driverClassName}" /> 
+		  <property name="jdbcUrl" value="${jdbc.url}" /> 
+		  <property name="user" value="${jdbc.username}" /> 
+		  <property name="password" value="${jdbc.password}" />
+       </bean>           
+       
+       <!-- 配置hibernate 的sessionFactory与spring集成 -->
+        <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!-- 设置数据源 -->
+        <property name="dataSource" ref="dataSource" />
+        <property name="hibernateProperties">
+           <props>
+         <!-- Hibernate创建表策略 -->
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+                <!-- 系统使用的数据库方言，也就是使用的数据库类型 -->
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+                <!-- 是否打印Hibernate生成的SQL到控制台 -->
+                <prop key="hibernate.show_sql">true</prop>
+        </props>
+        </property>
+        <!-- 设置实体扫描包 -->
+          <property name="packagesToScan" value="org.ssh.intergraction.entity"></property>
+        </bean>
+        
+        <!-- 配置事务管理器 -->                    
+        <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <!-- 配置session工厂给事务管理器 -->
+        <property name="sessionFactory" ref="sessionFactory"></property>
+        </bean>                
+                        
+                             
+        <!-- 配置事务切面 -->
+        <aop:config>
+            <!-- 定义事务切入点 -->
+            <aop:pointcut expression="execution(* org.ssh.intergraction.service.*.*(..))" id="txPointcut"/>
+            <!-- 定义事务通知 -->
+            <aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+        </aop:config>
+        
+        <!-- 配置事务传播属性 -->
+        <tx:advice id="txAdvice" transaction-manager="transactionManager">
+          <tx:attributes>
+          <!-- *表示所有的方法参与事务，默认事务类型为可读写，默认事务隔离级别使用数据默认 隔离级别，默认传播属性REQUIRED-->
+          <!-- read-only:表示只读事务 -->
+            <tx:method name="get*" read-only="true"/>
+            <tx:method name="find*" read-only="true"/>
+			<tx:method name="search*" read-only="true"/>
+			<tx:method name="*" />
+          </tx:attributes>
+        </tx:advice>
+        
+        <!-- 配置spring组件扫描位置  -->
+   <context:component-scan base-package="org.ssh.intergraction"></context:component-scan>
+  
+                             
+</beans>
